@@ -151,20 +151,20 @@ module.exports = function init(exec, cookieHandler, urlUtil, helpers, globalConf
       case 'put':
       case 'patch':
         helpers.processData(options.data, options.serializer, function (data) {
-          exec(onSuccess, onFail, 'CordovaHttpPlugin', options.method, [url, data, options.serializer, headers, options.timeout, options.followRedirect, options.responseType, reqId]);
+          exec(onSuccess, onFail, 'CordovaHttpPlugin', options.method, [url, data, options.serializer, headers, options.timeout, options.followRedirect, options.responseType, reqId, options.serverTrustMode]);
         });
         break;
       case 'upload':
         var fileOptions = helpers.checkUploadFileOptions(options.filePath, options.name);
-        exec(onSuccess, onFail, 'CordovaHttpPlugin', 'uploadFiles', [url, headers, fileOptions.filePaths, fileOptions.names, options.timeout, options.followRedirect, options.responseType, reqId]);
+        exec(onSuccess, onFail, 'CordovaHttpPlugin', 'uploadFiles', [url, headers, fileOptions.filePaths, fileOptions.names, options.timeout, options.followRedirect, options.responseType, reqId, options.serverTrustMode]);
         break;
       case 'download':
         var filePath = helpers.checkDownloadFilePath(options.filePath);
         var onDownloadSuccess = helpers.injectCookieHandler(url, helpers.injectFileEntryHandler(success));
-        exec(onDownloadSuccess, onFail, 'CordovaHttpPlugin', 'downloadFile', [url, headers, filePath, options.timeout, options.followRedirect, reqId]);
+        exec(onDownloadSuccess, onFail, 'CordovaHttpPlugin', 'downloadFile', [url, headers, filePath, options.timeout, options.followRedirect, reqId, options.serverTrustMode]);
         break;
       default:
-        exec(onSuccess, onFail, 'CordovaHttpPlugin', options.method, [url, headers, options.timeout, options.followRedirect, options.responseType, reqId]);
+        exec(onSuccess, onFail, 'CordovaHttpPlugin', options.method, [url, headers, options.timeout, options.followRedirect, options.responseType, reqId, options.serverTrustMode]);
         break;
     }
 

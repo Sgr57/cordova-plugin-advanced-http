@@ -60,28 +60,59 @@ class CordovaServerTrust implements Runnable {
     };
   }
 
+  public CordovaServerTrust(final Activity activity) {
+    this.activity = activity;
+
+    this.noOpTrustManagers = new TrustManager[] { new X509TrustManager() {
+      public X509Certificate[] getAcceptedIssuers() {
+        return new X509Certificate[0];
+      }
+
+      public void checkClientTrusted(X509Certificate[] chain, String authType) {
+        // intentionally left blank
+      }
+
+      public void checkServerTrusted(X509Certificate[] chain, String authType) {
+        // intentionally left blank
+      }
+    } };
+
+    this.noOpVerifier = new HostnameVerifier() {
+      public boolean verify(String hostname, SSLSession session) {
+        return true;
+      }
+    };
+  }
+
   @Override
   public void run() {
     try {
-      if ("legacy".equals(this.mode)) {
-        this.tlsConfiguration.setHostnameVerifier(null);
-        this.tlsConfiguration.setTrustManagers(null);
-      } else if ("nocheck".equals(this.mode)) {
-        this.tlsConfiguration.setHostnameVerifier(this.noOpVerifier);
-        this.tlsConfiguration.setTrustManagers(this.noOpTrustManagers);
-      } else if ("pinned".equals(this.mode)) {
-        this.tlsConfiguration.setHostnameVerifier(null);
-        this.tlsConfiguration.setTrustManagers(this.getTrustManagers(this.getCertsFromBundle("www/certificates")));
-      } else {
-        this.tlsConfiguration.setHostnameVerifier(null);
-        this.tlsConfiguration.setTrustManagers(this.getTrustManagers(this.getCertsFromKeyStore("AndroidCAStore")));
-      }
-
+      this.tlsConfiguration = this.configureTLS(this.mode);
       callbackContext.success();
     } catch (Exception e) {
       Log.e(TAG, "An error occured while configuring SSL cert mode", e);
       callbackContext.error("An error occured while configuring SSL cert mode");
     }
+  }
+
+  public TLSConfiguration configureTLS(String mode) throws Exception {
+    TLSConfiguration tlsConfiguration = new TLSConfiguration();
+
+    if ("legacy".equals(mode)) {
+      tlsConfiguration.setHostnameVerifier(null);
+      tlsConfiguration.setTrustManagers(null);
+    } else if ("nocheck".equals(mode)) {
+      tlsConfiguration.setHostnameVerifier(this.noOpVerifier);
+      tlsConfiguration.setTrustManagers(this.noOpTrustManagers);
+    } else if ("pinned".equals(mode)) {
+      tlsConfiguration.setHostnameVerifier(null);
+      tlsConfiguration.setTrustManagers(this.getTrustManagers(this.getCertsFromBundle("www/certificates")));
+    } else {
+      tlsConfiguration.setHostnameVerifier(null);
+      tlsConfiguration.setTrustManagers(this.getTrustManagers(this.getCertsFromKeyStore("AndroidCAStore")));
+    }
+
+    return tlsConfiguration;
   }
 
   private TrustManager[] getTrustManagers(KeyStore store) throws GeneralSecurityException {

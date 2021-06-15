@@ -1,7 +1,6 @@
 package com.silkimen.cordovahttp;
 
 import java.security.KeyStore;
-import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.Observable;
 import java.util.Observer;
@@ -20,13 +19,12 @@ import org.json.JSONObject;
 import android.util.Log;
 import android.util.Base64;
 
-import javax.net.ssl.*;
+import javax.net.ssl.TrustManagerFactory;
 
 public class CordovaHttpPlugin extends CordovaPlugin implements Observer {
   private static final String TAG = "Cordova-Plugin-HTTP";
 
   private TLSConfiguration tlsConfiguration;
-  private TLSConfiguration insecureTlsConfiguration;
 
   private HashMap<Integer, Future<?>> reqMap;
   private final Object reqMapLock = new Object();
@@ -36,7 +34,6 @@ public class CordovaHttpPlugin extends CordovaPlugin implements Observer {
     super.initialize(cordova, webView);
 
     this.tlsConfiguration = new TLSConfiguration();
-    this.insecureTlsConfiguration = new TLSConfiguration();
 
     this.reqMap = new HashMap<Integer, Future<?>>();
 
@@ -50,17 +47,6 @@ public class CordovaHttpPlugin extends CordovaPlugin implements Observer {
 
       this.tlsConfiguration.setHostnameVerifier(null);
       this.tlsConfiguration.setTrustManagers(tmf.getTrustManagers());
-
-      this.insecureTlsConfiguration.setHostnameVerifier(new HostnameVerifier() {
-        public boolean verify(String hostname, SSLSession session) { return true; }
-      });
-      this.insecureTlsConfiguration.setTrustManagers(new TrustManager[] { new X509TrustManager() {
-        public X509Certificate[] getAcceptedIssuers() {
-          return new X509Certificate[0];
-        }
-        public void checkClientTrusted(X509Certificate[] chain, String authType) {}
-        public void checkServerTrusted(X509Certificate[] chain, String authType) {}
-      } });
     } catch (Exception e) {
       Log.e(TAG, "An error occured while loading system's CA certificates", e);
     }
@@ -115,8 +101,17 @@ public class CordovaHttpPlugin extends CordovaPlugin implements Observer {
     Integer reqId = args.getInt(5);
     CordovaObservableCallbackContext observableCallbackContext = new CordovaObservableCallbackContext(callbackContext, reqId);
 
-    boolean isIpAddressPresent = url.matches("\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b");
-    TLSConfiguration tlsConfig = isIpAddressPresent ? this.insecureTlsConfiguration : this.tlsConfiguration;
+    TLSConfiguration tlsConfig;
+    try {
+      String serverTrustMode = args.getString(6);
+      if (serverTrustMode != null) {
+        tlsConfig = new CordovaServerTrust(this.cordova.getActivity()).configureTLS(serverTrustMode);
+      } else {
+        tlsConfig = this.tlsConfiguration;
+      }
+    } catch (Exception e) {
+      throw new JSONException("An error occured while configuring SSL cert mode");
+    }
 
     CordovaHttpOperation request = new CordovaHttpOperation(method.toUpperCase(), url, headers, timeout, followRedirect,
         responseType, tlsConfig, observableCallbackContext);
@@ -140,8 +135,17 @@ public class CordovaHttpPlugin extends CordovaPlugin implements Observer {
     Integer reqId = args.getInt(7);
     CordovaObservableCallbackContext observableCallbackContext = new CordovaObservableCallbackContext(callbackContext, reqId);
 
-    boolean isIpAddressPresent = url.matches("\\b(?:[0-9]{1,3}\\.){3}[0-9]{1,3}\\b");
-    TLSConfiguration tlsConfig = isIpAddressPresent ? this.insecureTlsConfiguration : this.tlsConfiguration;
+    TLSConfiguration tlsConfig;
+    try {
+      String serverTrustMode = args.getString(8);
+      if (serverTrustMode != null) {
+        tlsConfig = new CordovaServerTrust(this.cordova.getActivity()).configureTLS(serverTrustMode);
+      } else {
+        tlsConfig = this.tlsConfiguration;
+      }
+    } catch (Exception e) {
+      throw new JSONException("An error occured while configuring SSL cert mode");
+    }
 
     CordovaHttpOperation request = new CordovaHttpOperation(method.toUpperCase(), url, serializer, data, headers,
         timeout, followRedirect, responseType, tlsConfig, observableCallbackContext);
@@ -163,8 +167,20 @@ public class CordovaHttpPlugin extends CordovaPlugin implements Observer {
     Integer reqId = args.getInt(7);
     CordovaObservableCallbackContext observableCallbackContext = new CordovaObservableCallbackContext(callbackContext, reqId);
 
+    TLSConfiguration tlsConfig;
+    try {
+      String serverTrustMode = args.getString(8);
+      if (serverTrustMode != null) {
+        tlsConfig = new CordovaServerTrust(this.cordova.getActivity()).configureTLS(serverTrustMode);
+      } else {
+        tlsConfig = this.tlsConfiguration;
+      }
+    } catch (Exception e) {
+      throw new JSONException("An error occured while configuring SSL cert mode");
+    }
+
     CordovaHttpUpload upload = new CordovaHttpUpload(url, headers, filePaths, uploadNames, timeout, followRedirect,
-        responseType, this.tlsConfiguration, this.cordova.getActivity().getApplicationContext(), observableCallbackContext);
+        responseType, tlsConfig, this.cordova.getActivity().getApplicationContext(), observableCallbackContext);
 
     startRequest(reqId, observableCallbackContext, upload);
 
@@ -180,6 +196,18 @@ public class CordovaHttpPlugin extends CordovaPlugin implements Observer {
 
     Integer reqId = args.getInt(5);
     CordovaObservableCallbackContext observableCallbackContext = new CordovaObservableCallbackContext(callbackContext, reqId);
+
+    TLSConfiguration tlsConfig;
+    try {
+      String serverTrustMode = args.getString(6);
+      if (serverTrustMode != null) {
+        tlsConfig = new CordovaServerTrust(this.cordova.getActivity()).configureTLS(serverTrustMode);
+      } else {
+        tlsConfig = this.tlsConfiguration;
+      }
+    } catch (Exception e) {
+      throw new JSONException("An error occured while configuring SSL cert mode");
+    }
 
     CordovaHttpDownload download = new CordovaHttpDownload(url, headers, filePath, timeout, followRedirect,
         this.tlsConfiguration, observableCallbackContext);

@@ -506,6 +506,7 @@ module.exports = function init(global, jsUtil, cookieHandler, messages, base64, 
       responseType: checkResponseType(options.responseType || validResponseTypes[0]),
       serializer: checkSerializer(options.serializer || globals.serializer),
       timeout: checkTimeoutValue(options.timeout || globals.timeout),
+      serverTrustMode: options.serverTrustMode || null,
     };
   }
 };

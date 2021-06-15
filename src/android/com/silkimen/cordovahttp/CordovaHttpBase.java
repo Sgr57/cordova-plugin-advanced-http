@@ -189,7 +189,7 @@ abstract class CordovaHttpBase implements Runnable {
       }
 
       // prevent sending malformed empty multipart requests (#372)
-      if (buffers.length == 0) {
+      if (buffers.length() == 0) {
         request.contentType(HttpRequest.CONTENT_TYPE_FORM);
       }
     }
