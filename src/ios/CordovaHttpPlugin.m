@@ -223,7 +223,7 @@
 }
 
 // TODO: New Logic
-- (void)configureSecurityPolicy:(NSString *)certMode forManager:(AFHTTPSessionManager*)manager {
+- (void)configureSecurityPolicy:(NSString * __nullable)certMode forManager:(AFHTTPSessionManager*)manager {
     if ([certMode isEqualToString: @"default"] || [certMode isEqualToString: @"legacy"]) {
         manager.securityPolicy = [AFSecurityPolicy policyWithPinningMode:AFSSLPinningModeNone];
         manager.securityPolicy.allowInvalidCertificates = NO;
@@ -250,16 +250,17 @@
     bool followRedirect = [[command.arguments objectAtIndex:3] boolValue];
     NSString *responseType = [command.arguments objectAtIndex:4];
     NSNumber *reqId = [command.arguments objectAtIndex:5];
+    NSString *serverTrustMode = [command.arguments objectAtIndex:6];
 
     [self setRequestSerializer: @"default" forManager: manager];
 
     // TODO: New Logic
-    if ([command.arguments count] > 5) {
-        [self configureSecurityPolicy: [command.arguments objectAtIndex:6] forManager: manager];
-        [self setupSingleAuthChallengeBlock:manager];
+    if ([serverTrustMode isEqual:[NSNull null]]) {
+        [self setupAuthChallengeBlock: manager];
 
     } else {
-        [self setupAuthChallengeBlock: manager];
+        [self configureSecurityPolicy: serverTrustMode forManager: manager];
+        [self setupSingleAuthChallengeBlock:manager];
     }
 
     [self setRequestHeaders: headers forManager: manager];
@@ -321,16 +322,17 @@
     bool followRedirect = [[command.arguments objectAtIndex:5] boolValue];
     NSString *responseType = [command.arguments objectAtIndex:6];
     NSNumber *reqId = [command.arguments objectAtIndex:7];
+    NSString *serverTrustMode = [command.arguments objectAtIndex:8];
 
     [self setRequestSerializer: serializerName forManager: manager];
 
     // TODO: New Logic
-    if ([command.arguments count] > 7) {
-        [self configureSecurityPolicy: [command.arguments objectAtIndex:8] forManager: manager];
-        [self setupSingleAuthChallengeBlock:manager];
+    if ([serverTrustMode isEqual:[NSNull null]]) {
+        [self setupAuthChallengeBlock: manager];
 
     } else {
-        [self setupAuthChallengeBlock: manager];
+        [self configureSecurityPolicy: serverTrustMode forManager: manager];
+        [self setupSingleAuthChallengeBlock:manager];
     }
 
     [self setRequestHeaders: headers forManager: manager];
@@ -519,16 +521,17 @@
     bool followRedirect = [[command.arguments objectAtIndex:5] boolValue];
     NSString *responseType = [command.arguments objectAtIndex:6];
     NSNumber *reqId = [command.arguments objectAtIndex:7];
+    NSString *serverTrustMode = [command.arguments objectAtIndex:8];
 
     [self setRequestHeaders: headers forManager: manager];
 
     // TODO: New Logic
-    if ([command.arguments count] > 7) {
-        [self configureSecurityPolicy: [command.arguments objectAtIndex:8] forManager: manager];
-        [self setupSingleAuthChallengeBlock:manager];
+    if ([serverTrustMode isEqual:[NSNull null]]) {
+        [self setupAuthChallengeBlock: manager];
 
     } else {
-        [self setupAuthChallengeBlock: manager];
+        [self configureSecurityPolicy: serverTrustMode forManager: manager];
+        [self setupSingleAuthChallengeBlock:manager];
     }
 
     [self setTimeout:timeoutInSeconds forManager:manager];
@@ -595,17 +598,19 @@
     NSTimeInterval timeoutInSeconds = [[command.arguments objectAtIndex:3] doubleValue];
     bool followRedirect = [[command.arguments objectAtIndex:4] boolValue];
     NSNumber *reqId = [command.arguments objectAtIndex:5];
+    NSString *serverTrustMode = [command.arguments objectAtIndex:6];
 
     [self setRequestHeaders: headers forManager: manager];
 
     // TODO: New Logic
-    if ([command.arguments count] > 5) {
-        [self configureSecurityPolicy: [command.arguments objectAtIndex:6] forManager: manager];
-        [self setupSingleAuthChallengeBlock:manager];
+    if ([serverTrustMode isEqual:[NSNull null]]) {
+        [self setupAuthChallengeBlock: manager];
 
     } else {
-        [self setupAuthChallengeBlock: manager];
+        [self configureSecurityPolicy: serverTrustMode forManager: manager];
+        [self setupSingleAuthChallengeBlock:manager];
     }
+    [self setRequestHeaders: headers forManager: manager];
 
     [self setTimeout:timeoutInSeconds forManager:manager];
     [self setRedirect:followRedirect forManager:manager];
