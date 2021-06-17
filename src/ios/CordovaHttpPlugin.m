@@ -52,11 +52,41 @@
     }
 }
 
+// TODO: New Logic
+- (void)setupSingleAuthChallengeBlock:(AFHTTPSessionManager*)manager {
+    [manager setSessionDidReceiveAuthenticationChallengeBlock:^NSURLSessionAuthChallengeDisposition(
+        NSURLSession * _Nonnull session,
+        NSURLAuthenticationChallenge * _Nonnull challenge,
+        NSURLCredential * _Nullable __autoreleasing * _Nullable credential,
+        AFURLSessionManager * _Nullable manager
+    ) {
+        if ([challenge.protectionSpace.authenticationMethod isEqualToString: NSURLAuthenticationMethodServerTrust]) {
+            *credential = [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust];
+
+            if (![manager.securityPolicy evaluateServerTrust:challenge.protectionSpace.serverTrust forDomain:challenge.protectionSpace.host]) {
+                return NSURLSessionAuthChallengeRejectProtectionSpace;
+            }
+
+            if (credential) {
+                return NSURLSessionAuthChallengeUseCredential;
+            }
+        }
+
+        if ([challenge.protectionSpace.authenticationMethod isEqualToString: NSURLAuthenticationMethodClientCertificate] && self->x509Credential) {
+            *credential = self->x509Credential;
+            return NSURLSessionAuthChallengeUseCredential;
+        }
+
+        return NSURLSessionAuthChallengePerformDefaultHandling;
+    }];
+}
+
 - (void)setupAuthChallengeBlock:(AFHTTPSessionManager*)manager {
     [manager setSessionDidReceiveAuthenticationChallengeBlock:^NSURLSessionAuthChallengeDisposition(
         NSURLSession * _Nonnull session,
         NSURLAuthenticationChallenge * _Nonnull challenge,
-        NSURLCredential * _Nullable __autoreleasing * _Nullable credential
+        NSURLCredential * _Nullable __autoreleasing * _Nullable credential,
+        AFURLSessionManager * _Nullable manager
     ) {
         if ([challenge.protectionSpace.authenticationMethod isEqualToString: NSURLAuthenticationMethodServerTrust]) {
             *credential = [NSURLCredential credentialForTrust:challenge.protectionSpace.serverTrust];
@@ -192,6 +222,25 @@
     return headerFieldsCopy;
 }
 
+// TODO: New Logic
+- (void)configureSecurityPolicy:(NSString *)certMode forManager:(AFHTTPSessionManager*)manager {
+    if ([certMode isEqualToString: @"default"] || [certMode isEqualToString: @"legacy"]) {
+        manager.securityPolicy = [AFSecurityPolicy policyWithPinningMode:AFSSLPinningModeNone];
+        manager.securityPolicy.allowInvalidCertificates = NO;
+        manager.securityPolicy.validatesDomainName = YES;
+
+    } else if ([certMode isEqualToString: @"nocheck"]) {
+        manager.securityPolicy = [AFSecurityPolicy policyWithPinningMode:AFSSLPinningModeNone];
+        manager.securityPolicy.allowInvalidCertificates = YES;
+        manager.securityPolicy.validatesDomainName = NO;
+
+    } else if ([certMode isEqualToString: @"pinned"]) {
+        manager.securityPolicy = [AFSecurityPolicy policyWithPinningMode:AFSSLPinningModeCertificate];
+        manager.securityPolicy.allowInvalidCertificates = NO;
+        manager.securityPolicy.validatesDomainName = YES;
+    }
+}
+
 - (void)executeRequestWithoutData:(CDVInvokedUrlCommand*)command withMethod:(NSString*) method {
     AFHTTPSessionManager *manager = [AFHTTPSessionManager manager];
 
@@ -203,7 +252,16 @@
     NSNumber *reqId = [command.arguments objectAtIndex:5];
 
     [self setRequestSerializer: @"default" forManager: manager];
-    [self setupAuthChallengeBlock: manager];
+
+    // TODO: New Logic
+    if ([command.arguments count] > 5) {
+        [self configureSecurityPolicy: [command.arguments objectAtIndex:6] forManager: manager];
+        [self setupSingleAuthChallengeBlock:manager];
+
+    } else {
+        [self setupAuthChallengeBlock: manager];
+    }
+
     [self setRequestHeaders: headers forManager: manager];
     [self setTimeout:timeoutInSeconds forManager:manager];
     [self setRedirect:followRedirect forManager:manager];
@@ -265,7 +323,16 @@
     NSNumber *reqId = [command.arguments objectAtIndex:7];
 
     [self setRequestSerializer: serializerName forManager: manager];
-    [self setupAuthChallengeBlock: manager];
+
+    // TODO: New Logic
+    if ([command.arguments count] > 7) {
+        [self configureSecurityPolicy: [command.arguments objectAtIndex:8] forManager: manager];
+        [self setupSingleAuthChallengeBlock:manager];
+
+    } else {
+        [self setupAuthChallengeBlock: manager];
+    }
+
     [self setRequestHeaders: headers forManager: manager];
     [self setTimeout:timeoutInSeconds forManager:manager];
     [self setRedirect:followRedirect forManager:manager];
@@ -454,7 +521,16 @@
     NSNumber *reqId = [command.arguments objectAtIndex:7];
 
     [self setRequestHeaders: headers forManager: manager];
-    [self setupAuthChallengeBlock: manager];
+
+    // TODO: New Logic
+    if ([command.arguments count] > 7) {
+        [self configureSecurityPolicy: [command.arguments objectAtIndex:8] forManager: manager];
+        [self setupSingleAuthChallengeBlock:manager];
+
+    } else {
+        [self setupAuthChallengeBlock: manager];
+    }
+
     [self setTimeout:timeoutInSeconds forManager:manager];
     [self setRedirect:followRedirect forManager:manager];
     [self setResponseSerializer:responseType forManager:manager];
@@ -521,7 +597,16 @@
     NSNumber *reqId = [command.arguments objectAtIndex:5];
 
     [self setRequestHeaders: headers forManager: manager];
-    [self setupAuthChallengeBlock: manager];
+
+    // TODO: New Logic
+    if ([command.arguments count] > 5) {
+        [self configureSecurityPolicy: [command.arguments objectAtIndex:6] forManager: manager];
+        [self setupSingleAuthChallengeBlock:manager];
+
+    } else {
+        [self setupAuthChallengeBlock: manager];
+    }
+
     [self setTimeout:timeoutInSeconds forManager:manager];
     [self setRedirect:followRedirect forManager:manager];
 

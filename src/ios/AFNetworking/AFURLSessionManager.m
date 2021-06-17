@@ -86,7 +86,7 @@ static NSString * const AFURLSessionManagerLockName = @"com.alamofire.networking
 static NSUInteger const AFMaximumNumberOfAttemptsToRecreateBackgroundSessionUploadTask = 3;
 
 typedef void (^AFURLSessionDidBecomeInvalidBlock)(NSURLSession *session, NSError *error);
-typedef NSURLSessionAuthChallengeDisposition (^AFURLSessionDidReceiveAuthenticationChallengeBlock)(NSURLSession *session, NSURLAuthenticationChallenge *challenge, NSURLCredential * __autoreleasing *credential);
+typedef NSURLSessionAuthChallengeDisposition (^AFURLSessionDidReceiveAuthenticationChallengeBlock)(NSURLSession *session, NSURLAuthenticationChallenge *challenge, NSURLCredential * __autoreleasing *credential, AFURLSessionManager *manager);
 
 typedef NSURLRequest * (^AFURLSessionTaskWillPerformHTTPRedirectionBlock)(NSURLSession *session, NSURLSessionTask *task, NSURLResponse *response, NSURLRequest *request);
 typedef NSURLSessionAuthChallengeDisposition (^AFURLSessionTaskDidReceiveAuthenticationChallengeBlock)(NSURLSession *session, NSURLSessionTask *task, NSURLAuthenticationChallenge *challenge, NSURLCredential * __autoreleasing *credential);
@@ -865,7 +865,7 @@ static NSString * const AFNSURLSessionTaskDidSuspendNotification = @"com.alamofi
     self.sessionDidBecomeInvalid = block;
 }
 
-- (void)setSessionDidReceiveAuthenticationChallengeBlock:(NSURLSessionAuthChallengeDisposition (^)(NSURLSession *session, NSURLAuthenticationChallenge *challenge, NSURLCredential * __autoreleasing *credential))block {
+- (void)setSessionDidReceiveAuthenticationChallengeBlock:(NSURLSessionAuthChallengeDisposition (^)(NSURLSession *session, NSURLAuthenticationChallenge *challenge, NSURLCredential * __autoreleasing *credential, AFURLSessionManager *manager))block {
     self.sessionDidReceiveAuthenticationChallenge = block;
 }
 
@@ -967,7 +967,7 @@ didReceiveChallenge:(NSURLAuthenticationChallenge *)challenge
     __block NSURLCredential *credential = nil;
 
     if (self.sessionDidReceiveAuthenticationChallenge) {
-        disposition = self.sessionDidReceiveAuthenticationChallenge(session, challenge, &credential);
+        disposition = self.sessionDidReceiveAuthenticationChallenge(session, challenge, &credential, self);
     } else {
         if ([challenge.protectionSpace.authenticationMethod isEqualToString:NSURLAuthenticationMethodServerTrust]) {
             if ([self.securityPolicy evaluateServerTrust:challenge.protectionSpace.serverTrust forDomain:challenge.protectionSpace.host]) {
